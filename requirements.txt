@@ -2,6 +2,6 @@ streamlit
 opencv-python-headless
 numpy
 pillow
-deepface==0.0.79
-tensorflow-cpu==2.12.0
+deepface
+tensorflow
 tf-keras
