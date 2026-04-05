@@ -12,7 +12,6 @@ os.makedirs("face_db", exist_ok=True)
 os.makedirs("uploads", exist_ok=True)
 
 st.set_page_config(page_title="Smart Cloud Storage", layout="centered")
-
 st.title("🔐 Smart Cloud Storage with Face Recognition")
 
 menu = st.sidebar.selectbox("Menu", ["Register", "Login"])
@@ -22,6 +21,15 @@ menu = st.sidebar.selectbox("Menu", ["Register", "Login"])
 # =========================
 if "user" not in st.session_state:
     st.session_state.user = None
+
+# =========================
+# CACHE MODEL (IMPORTANT)
+# =========================
+@st.cache_resource
+def load_model():
+    return True  # dummy cache trigger for DeepFace
+
+load_model()
 
 # =========================
 # 👤 REGISTER
@@ -53,12 +61,11 @@ elif menu == "Login":
 
     img_file = st.camera_input("Capture Face for Login")
 
-    # =========================
-    # LOGIN BUTTON
-    # =========================
     if st.button("Login"):
         if not img_file:
             st.warning("⚠️ Capture your face first")
+        elif len(os.listdir("face_db")) == 0:
+            st.error("❌ No registered users. Please register first.")
         else:
             image = Image.open(img_file)
             img = np.array(image)
@@ -76,15 +83,15 @@ elif menu == "Login":
                         result = DeepFace.verify(
                             img1_path=temp_path,
                             img2_path=db_path,
-                            model_name="Facenet",
+                            model_name="SFace",  # 🔥 lighter & cloud-friendly
                             enforce_detection=False
                         )
 
                         if result["verified"]:
                             authenticated_user = file.split(".")[0]
                             break
-                    except:
-                        continue
+                    except Exception as e:
+                        st.warning(f"Skipping file: {file}")
 
             if authenticated_user:
                 st.session_state.user = authenticated_user
@@ -93,7 +100,7 @@ elif menu == "Login":
                 st.error("❌ Face Not Recognized")
 
     # =========================
-    # AFTER LOGIN (PERSISTENT)
+    # AFTER LOGIN
     # =========================
     if st.session_state.user:
         user = st.session_state.user
